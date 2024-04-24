@@ -27,7 +27,7 @@ for y in range(11, 354, +22):
 
 
 for infilename in glob.iglob("in/" + '**/*.png', recursive=True):
-    outfilename = "out" + infilename[2:] + ".dat"
+    outfilename = "out" + infilename[2:][:-4] + ".dat"
     print(outfilename)
 
     r=png.Reader(infilename)
@@ -45,7 +45,10 @@ for infilename in glob.iglob("in/" + '**/*.png', recursive=True):
         l = list(row)
         for i in range(0, len(l), +4):
             inpix =  (l[i], l[i+1], l[i+2])
-            barr.append(colordict[inpix])
+            outpx_idx = colordict.get(inpix)
+            if (outpx_idx == None):
+                outpx_idx = 255
+            barr.append(outpx_idx)
                 
         rowno += 1
     b_arr = bytes(barr)
