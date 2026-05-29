@@ -1,8 +1,6 @@
-import math
 import os
 import png
 import glob
-from os.path import exists
 
 #struct TbColorTables {
 #  unsigned char fade_tables[64*256];
@@ -32,45 +30,40 @@ for y in range(11, 354, +22):
         pal_idx +=1
 
 offset = 0
-w=32*8
-
+w = 32 * 8
 vpr = 4 * w
 
-m = [[0] * vpr for y_ in range(128)]
-
-i = 0
 for infilename in glob.iglob("in/" + '**/*.*', recursive=True):
     try:
         with open(infilename, "rb") as f:
-            byte = f.read(1)
-            while byte:
-                if (i >= offset):
-                    k = i - offset
-                    #outpix = colordict[byte]
+            data = f.read()
 
-                    outpix = colordict.get(int.from_bytes(byte, "big"))
-                    row = math.floor(k/256)
-                    try:
-                        if (outpix == None):
-                            m[row][k%w*4]  = 0
-                            m[row][k%w*4+1]= 0
-                            m[row][k%w*4+2]= 0
-                            m[row][k%w*4+3]= 0
-                        else:
-                            m[row][k%w*4]  =outpix[0]
-                            m[row][k%w*4+1]=outpix[1]
-                            m[row][k%w*4+2]=outpix[2]
-                            m[row][k%w*4+3]=255
-                    except IOError:
-                        print('meh')
-                i +=1
-                if (i >= os.path.getsize(infilename)):
-                    break
+        if len(data) <= offset:
+            continue
 
-                
-                byte = f.read(1)
-                #print(byte
-        outfilename = "out" + infilename[2:] + ".png"
+        pixel_data = data[offset:]
+        rows = (len(pixel_data) + w - 1) // w
+        m = [[0] * vpr for _ in range(rows)]
+
+        for k, value in enumerate(pixel_data):
+            outpix = colordict.get(value)
+            row = k // w
+            col = (k % w) * 4
+
+            if outpix is None:
+                m[row][col] = 0
+                m[row][col + 1] = 0
+                m[row][col + 2] = 0
+                m[row][col + 3] = 0
+            else:
+                m[row][col] = outpix[0]
+                m[row][col + 1] = outpix[1]
+                m[row][col + 2] = outpix[2]
+                m[row][col + 3] = 255
+
+        relname = os.path.relpath(infilename, "in")
+        outfilename = os.path.join("out", relname + ".png")
+        os.makedirs(os.path.dirname(outfilename), exist_ok=True)
         png.from_array(m, "RGBA").save(outfilename)
     except IOError:
         print('Error While Opening the file!')  
